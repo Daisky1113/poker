@@ -5,7 +5,7 @@
         <v-card-text>
           <p>カード</p>
           <div>
-            <p class="d-flex align-center" v-for="(card, i) in hands" :key="i">
+            <p class="d-flex align-center" v-for="(card, i) in sorteadHand" :key="i">
               <span class="mr-3"><v-img max-height="20" max-width="20" :src="`/img/${card.mark}.png`" alt=""></v-img></span>
               <span class="subtitle-2">{{ card.val |  replace1toA}}</span>
             </p>
@@ -39,13 +39,15 @@ export default {
     // debug
     //---------------------------------
     this.hands.push(...[
-        {mark: 'S', val: '1'},
-        {mark: 'H', val: '1',},
-        {mark: 'D', val: '12'}, 
-        {mark: 'S', val: '12'}, 
-        {mark: 'S', val: '13'}
+        {mark: 'S', val: 7},
+        {mark: 'H', val: 8},
+        {mark: 'D', val: 9}, 
+        {mark: 'S', val: 11}, 
+        {mark: 'S', val: 11}, 
+        // {mark: 'Joker', val: 'Joker'}
       ])
-    this.getRole(this.hands)
+    this.checkJoker()
+    this.setRole(this.getRole(this.hands))
   },
   data: ()=>({
     deck: [],
@@ -58,21 +60,30 @@ export default {
       return num === 1 ? 'A' : num
     }
   },
+  computed:{
+    sorteadHand(){
+      return this.hands.sort((a, b) => a.val < b.val ? -1 : 1)
+    }
+  },
   methods: {
     getCards(n){
       this.clearRole()
       this.clearHands();
       this.clearJokerState();
+      this.getRandomCard(n)
+      this.checkJoker()
+      this.setRole(this.getRole(this.hands))
+    },
+
+    getRandomCard(n){
       const hand = [];
       for(let i = 0; i < n; i++){
-        const l = this.deck.length;
-        if(l === 0) this.addDeck();
+        if(this.deck.length == 0) this.addDeck()
+        const l = this.deck.length
         const index = Math.floor(Math.random() * l);
         hand.push(this.deck.splice(index, 1)[0])
       }
       this.hands.push(...hand);
-      this.checkJoker()
-      this.getRole(this.hands)
     },
 
     addDeck(){
@@ -121,68 +132,51 @@ export default {
    clearRole(){
      this.role = ''
    },
+   setRole(role){
+     this.role = role
+   },
+
    getRole(hand){
-     const s = new Set(hand.map(el => el.val).filter(el => el != 'Joker'))
-     console.log(s)
+     const sorteadHand = hand.filter(el => el.val != 'Joker').map(el => Number(el.val)).sort((a, b) => a > b? -1 : 1)
+     const s = new Set(sorteadHand)
+
      switch(s.size){
        case 1:
-         this.role = 'FiveCard'
-         break
+         return 'FiveCard'
       case 2:
-        if(this.hasJoker){
-          this.role = this.getNumberOfDuplication(hand, hand[0].val) === 2 ? 'FullHouse' : 'FourCard'
-        }else{
-          this.role = this.isFourCard(hand) ? 'FourCard' : 'FullHouse'
-        }
-        break
+        return  this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
       case 3:
-        if(this.hasJoker){
-          this.role = 'ThreeCard'
-        }else{
-          this.role = this.isThreeCard(hand, s) ? 'ThreeCard' : 'TwoPair'
-        }
-        break
+        return this.isThreeCard(sorteadHand, s, this.hasJoker) ? 'ThreeCard' : 'TwoPaier'
       case 4:
-        if(this.hasJoker){
-          const role = this.getOtherRole(hand) 
-          this.role = role === 'NoPaier' ? 'OnePaier' : role
-        }else{
-          this.role = 'OnePair'
-        }
-        break
       case 5:
-        this.role = this.getOtherRole(hand)
-        break
+        const flash = this.isFlash(hand)
+        const straight = this.isStraight(sorteadHand)
+        if(flash && straight) return 'StraighFlash'
+        if(straight) return 'Straight'
+        if(flash) return  this.isRoyalStraightFlash(sorteadHand) ? 'RoyalStraightFlash' : 'Flash'
+        if(this.isOnePare(sorteadHand, s, this.hasJoker, straight, flash)) return 'OnePair'
+        return 'NoPair'
      }
    },
 
 
    // カードの重複を数える関数
    getNumberOfDuplication(arr, num){
-     return arr.filter(el => el.val == num).length
+     return arr.filter(el => el == num).length
    },
 
     // フォーカード
-    // handの１枚目の重複が無いか４の時
-    isFourCard(hand){
-      const duplicate = this.getNumberOfDuplication(hand, hand[0].val)
-      return duplicate === 1 || duplicate == 4
+    // 重複している数字のどちらかの要素数が１の時
+    isFourCard(hand, set){
+      return [...set].map(el => this.getNumberOfDuplication(hand, el)).find(el => el === 1) ? true: false
     },
 
     // スリーカード
-    isThreeCard(hand, set){
+    // 重複している要素のどれかが３つあった時
+    // ジョーカーありの時は問答無用でthreecard
+    isThreeCard(hand, set, hasJoker){
+      if(hasJoker) return true
       return [...set].map((el) => this.getNumberOfDuplication(hand, el)).find(el => el === 3)
-    },
-
-    // ストレート系のロールを取得する
-    getOtherRole(hand){
-      const sortedHand = hand.map(el => Number(el.val)).sort((a, b) => a > b ? -1 : 1)
-      const flash = this.isFlash(hand)
-      const straight = this.isStraight(sortedHand)
-      if(flash && straight) return 'StraighFlash'
-      if(straight) return 'Straight'
-      if(flash) return this.isRoyalStraightFlash(hand) ? 'RoyalStraightFlash' :  'Flash'
-      if(flash === false && straight === false) return  'NoPaier'
     },
     
     // ストレートは渡ってきたハンドをソートして隣り合う要素の差がすべて１の時
@@ -190,8 +184,7 @@ export default {
     // ジョーカーありの場合も隣合うカードの差の合計が４ならストレートが成立する
     isStraight(sortedHand){
       let totalDiff = 0
-      console.log(sortedHand)
-      for(let i = 0; i < sortedHand.length - 1; i++){
+      for(let i = 0; i < sortedHand.length; i++){
         totalDiff += sortedHand[i] - sortedHand[i + 1]
       }
       return totalDiff == 4 ? true : false
@@ -205,11 +198,15 @@ export default {
    // ロイヤルストレートフラッシュはフラッシュの判定時に呼ばれる
    // handに１が含まれていたら14に変換してisStraightを呼ぶ
     isRoyalStraightFlash(hand){
-      return this.isStraight(hand.map(el => el.val === '1' ? 14 : Number(el.val)).sort((a, b) => a > b ? -1 : 1))
+      return this.isStraight(hand.map(el => el === 1 ? 14 : el).sort((a, b) => a > b ? -1 : 1))
     },
     
+    isOnePare(hand, s, hasJoker, isStraight, isFlash){
+      if(s.size === 4 && hand.length === 5) return true
+      return isStraight === false && isFlash === false && hasJoker ? true : false
+    },
+
     isTwoPare(hand){},
-    isOnePare(hand){},
     isFullhouse(hand){},
     isStraightFlash(hand){},
     isFiveCard(hand){},
