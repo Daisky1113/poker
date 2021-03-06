@@ -39,12 +39,12 @@ export default {
     // debug
     //---------------------------------
     this.hands.push(...[
-        {mark: 'S', val: 4},
-        {mark: 'H', val: 5,},
-        {mark: 'D', val: 7}, 
-        {mark: 'S', val: 8}, 
-        // {mark: 'S', val: '4'}, 
-        {mark: 'Joker', val: 'Joker'}
+        {mark: 'S', val: 1},
+        {mark: 'S', val: 13,},
+        {mark: 'S', val: 12}, 
+        {mark: 'S', val: 11}, 
+        {mark: 'S', val: 10}, 
+        // {mark: 'Joker', val: 'Joker'}
       ])
     this.checkJoker()
     this.setRole(this.getRole(this.hands))
@@ -156,9 +156,11 @@ export default {
       case 5:
         const flash = this.isFlash(hand)
         const straight = this.isStraight(sorteadHand, this.hasJoker)
+        const aStraight = this.isAStraight(sorteadHand)
+        if(flash && aStraight) return 'RoyalStraightFlash'
         if(flash && straight) return 'StraighFlash'
-        if(straight) return 'Straight'
-        if(flash) return  this.isRoyalStraightFlash(sorteadHand) ? 'RoyalStraightFlash' : 'Flash'
+        if(straight || aStraight ) return 'Straight'
+        if(flash) return  'Flash'
         if(this.isOnePare(sorteadHand, s, this.hasJoker, straight, flash)) return 'OnePair'
         return 'NoPair'
      }
@@ -188,6 +190,7 @@ export default {
     // つまり隣合うカードの差の合計が4の時
     // ジョーカーありの場合も隣合うカードの差の合計が４ならストレートが成立する
     isStraight(sortedHand, hasJoker){
+      console.log(sortedHand)
       let totalDiff = 0
       for(let i = 0; i < sortedHand.length - 1; i++){
         totalDiff += sortedHand[i] - sortedHand[i + 1]
@@ -199,22 +202,27 @@ export default {
 
       return totalDiff == 4 ? true : false
     },
+
+    // Aストレートを判断する
+    // ロイヤルはこれとフラッシュの組み合わせでみる
+    isAStraight(sortedHand){
+      if(sortedHand.includes(1)){
+        return this.isStraight(sortedHand.map(el => el === 1 ? 14 : el).sort((a, b) => a > b ? -1 : 1))
+      }else{
+        return false
+      }
+    },
+
     // フラッシュはハンドのマークだけのセットを作ってサイズが1の時
     isFlash(hand){
       return new Set(hand.map(el => el.mark)).size == 1 ? true : false
     },
-
-   // ロイヤルストレートフラッシュはフラッシュの判定時に呼ばれる
-   // handに１が含まれていたら14に変換してisStraightを呼ぶ
-    isRoyalStraightFlash(hand){
-      return this.isStraight(hand.map(el => el === 1 ? 14 : el).sort((a, b) => a > b ? -1 : 1))
-    },
-    
     isOnePare(hand, s, hasJoker, isStraight, isFlash){
       if(s.size === 4 && hand.length === 5) return true
       return isStraight === false && isFlash === false && hasJoker ? true : false
     },
 
+    isRoyalStraightFlash(hand){},
     isTwoPare(hand){},
     isFullhouse(hand){},
     isStraightFlash(hand){},
