@@ -38,14 +38,14 @@ export default {
     //--------------------------------
     // debug
     //---------------------------------
-    // this.hands.push(...[
-    //     {mark: 'S', val: '1'},
-    //     {mark: 'C', val: '1',},
-    //     {mark: 'D', val: '1'}, 
-    //     {mark: 'H', val: '3'}, 
-    //     {mark: 'C', val: '2'}
-    //   ])
-    // this.getRole(this.hands)
+    this.hands.push(...[
+        {mark: 'S', val: '1'},
+        {mark: 'H', val: '1',},
+        {mark: 'D', val: '12'}, 
+        {mark: 'S', val: '12'}, 
+        {mark: 'S', val: '13'}
+      ])
+    this.getRole(this.hands)
   },
   data: ()=>({
     deck: [],
@@ -171,7 +171,7 @@ export default {
 
     // スリーカード
     isThreeCard(hand, set){
-      return [...set].map((el, i, src) => this.getNumberOfDuplication(src, el.val)).find(el => el === 3)
+      return [...set].map((el) => this.getNumberOfDuplication(hand, el)).find(el => el === 3)
     },
 
     // ストレート系のロールを取得する
