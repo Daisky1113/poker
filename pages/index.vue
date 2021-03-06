@@ -41,9 +41,9 @@ export default {
     this.hands.push(...[
         {mark: 'S', val: '1'},
         {mark: 'H', val: '1',},
-        {mark: 'D', val: '12'}, 
-        {mark: 'S', val: '12'}, 
-        {mark: 'S', val: '13'}
+        {mark: 'D', val: '13'}, 
+        {mark: 'S', val: '13'}, 
+        {mark: 'Joker', val: 'Joker'}
       ])
     this.getRole(this.hands)
   },
@@ -122,18 +122,15 @@ export default {
      this.role = ''
    },
    getRole(hand){
-     const s = new Set(hand.map(el => el.val).filter(el => el != 'Joker'))
-     console.log(s)
+     const sorteadHand = hand.filter(el => el.val != 'Joker').map(el => Number(el.val)).sort((a, b) => a > b? -1 : 1)
+     const s = new Set(sorteadHand)
+
      switch(s.size){
        case 1:
          this.role = 'FiveCard'
          break
       case 2:
-        if(this.hasJoker){
-          this.role = this.getNumberOfDuplication(hand, hand[0].val) === 2 ? 'FullHouse' : 'FourCard'
-        }else{
-          this.role = this.isFourCard(hand) ? 'FourCard' : 'FullHouse'
-        }
+        this.role = this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
         break
       case 3:
         if(this.hasJoker){
@@ -159,14 +156,13 @@ export default {
 
    // カードの重複を数える関数
    getNumberOfDuplication(arr, num){
-     return arr.filter(el => el.val == num).length
+     return arr.filter(el => el == num).length
    },
 
     // フォーカード
-    // handの１枚目の重複が無いか４の時
-    isFourCard(hand){
-      const duplicate = this.getNumberOfDuplication(hand, hand[0].val)
-      return duplicate === 1 || duplicate == 4
+    // 重複している数字のどちらかの要素数が１の時
+    isFourCard(hand, set){
+      return [...set].map(el => this.getNumberOfDuplication(hand, el)).find(el => el === 1) ? true: false
     },
 
     // スリーカード
