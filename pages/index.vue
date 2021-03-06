@@ -40,14 +40,14 @@ export default {
     //---------------------------------
     this.hands.push(...[
         {mark: 'S', val: '1'},
-        {mark: 'H', val: '1',},
-        {mark: 'D', val: '2'}, 
-        // {mark: 'S', val: '2'}, 
-        {mark: 'S', val: '13'}, 
+        {mark: 'H', val: '2',},
+        {mark: 'D', val: '3'}, 
+        {mark: 'S', val: '5'}, 
+        // {mark: 'S', val: '4'}, 
         {mark: 'Joker', val: 'Joker'}
       ])
     this.checkJoker()
-    this.getRole(this.hands)
+    this.setRole(this.getRole(this.hands))
   },
   data: ()=>({
     deck: [],
@@ -74,7 +74,7 @@ export default {
       }
       this.hands.push(...hand);
       this.checkJoker()
-      this.getRole(this.hands)
+      this.setRole(this.getRole(this.hands))
     },
 
     addDeck(){
@@ -123,31 +123,30 @@ export default {
    clearRole(){
      this.role = ''
    },
+   setRole(role){
+     this.role = role
+   },
+
    getRole(hand){
      const sorteadHand = hand.filter(el => el.val != 'Joker').map(el => Number(el.val)).sort((a, b) => a > b? -1 : 1)
      const s = new Set(sorteadHand)
 
      switch(s.size){
        case 1:
-         this.role = 'FiveCard'
-         break
+         return 'FiveCard'
       case 2:
-        this.role = this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
-        break
+        return  this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
       case 3:
-        this.role = this.isThreeCard(sorteadHand, s, this.hasJoker) ? 'ThreeCard' : 'TwoPaier'
-        break
+        return this.isThreeCard(sorteadHand, s, this.hasJoker) ? 'ThreeCard' : 'TwoPaier'
       case 4:
-        if(this.hasJoker){
-          const role = this.getOtherRole(hand) 
-          this.role = role === 'NoPaier' ? 'OnePaier' : role
-        }else{
-          this.role = 'OnePair'
-        }
-        break
       case 5:
-        this.role = this.getOtherRole(hand)
-        break
+        const flash = this.isFlash(hand)
+        const straight = this.isStraight(sorteadHand)
+        if(flash && straight) return 'StraighFlash'
+        if(straight) return 'Straight'
+        if(flash) return  this.isRoyalStraightFlash(sorteadHand) ? 'RoyalStraightFlash' : 'Flash'
+        if(this.isOnePare(sorteadHand, s, this.hasJoker, straight, flash)) return 'OnePair'
+        return 'NoPair'
      }
    },
 
@@ -170,17 +169,6 @@ export default {
       if(hasJoker) return true
       return [...set].map((el) => this.getNumberOfDuplication(hand, el)).find(el => el === 3)
     },
-
-    // ストレート系のロールを取得する
-    getOtherRole(hand){
-      const sortedHand = hand.map(el => Number(el.val)).sort((a, b) => a > b ? -1 : 1)
-      const flash = this.isFlash(hand)
-      const straight = this.isStraight(sortedHand)
-      if(flash && straight) return 'StraighFlash'
-      if(straight) return 'Straight'
-      if(flash) return this.isRoyalStraightFlash(hand) ? 'RoyalStraightFlash' :  'Flash'
-      if(flash === false && straight === false) return  'NoPaier'
-    },
     
     // ストレートは渡ってきたハンドをソートして隣り合う要素の差がすべて１の時
     // つまり隣合うカードの差の合計が4の時
@@ -201,11 +189,15 @@ export default {
    // ロイヤルストレートフラッシュはフラッシュの判定時に呼ばれる
    // handに１が含まれていたら14に変換してisStraightを呼ぶ
     isRoyalStraightFlash(hand){
-      return this.isStraight(hand.map(el => el.val === '1' ? 14 : Number(el.val)).sort((a, b) => a > b ? -1 : 1))
+      return this.isStraight(hand.map(el => el === 1 ? 14 : el).sort((a, b) => a > b ? -1 : 1))
     },
     
+    isOnePare(hand, s, hasJoker, isStraight, isFlash){
+      if(s.size === 4 && hand.length === 5) return true
+      return isStraight === false && isFlash === false && hasJoker ? true : false
+    },
+
     isTwoPare(hand){},
-    isOnePare(hand){},
     isFullhouse(hand){},
     isStraightFlash(hand){},
     isFiveCard(hand){},
