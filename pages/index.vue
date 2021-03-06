@@ -41,10 +41,12 @@ export default {
     this.hands.push(...[
         {mark: 'S', val: '1'},
         {mark: 'H', val: '1',},
-        {mark: 'D', val: '13'}, 
+        {mark: 'D', val: '2'}, 
+        // {mark: 'S', val: '2'}, 
         {mark: 'S', val: '13'}, 
         {mark: 'Joker', val: 'Joker'}
       ])
+    this.checkJoker()
     this.getRole(this.hands)
   },
   data: ()=>({
@@ -133,11 +135,7 @@ export default {
         this.role = this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
         break
       case 3:
-        if(this.hasJoker){
-          this.role = 'ThreeCard'
-        }else{
-          this.role = this.isThreeCard(hand, s) ? 'ThreeCard' : 'TwoPair'
-        }
+        this.role = this.isThreeCard(sorteadHand, s, this.hasJoker) ? 'ThreeCard' : 'TwoPaier'
         break
       case 4:
         if(this.hasJoker){
@@ -166,7 +164,10 @@ export default {
     },
 
     // スリーカード
-    isThreeCard(hand, set){
+    // 重複している要素のどれかが３つあった時
+    // ジョーカーありの時は問答無用でthreecard
+    isThreeCard(hand, set, hasJoker){
+      if(hasJoker) return true
       return [...set].map((el) => this.getNumberOfDuplication(hand, el)).find(el => el === 3)
     },
 
@@ -186,7 +187,6 @@ export default {
     // ジョーカーありの場合も隣合うカードの差の合計が４ならストレートが成立する
     isStraight(sortedHand){
       let totalDiff = 0
-      console.log(sortedHand)
       for(let i = 0; i < sortedHand.length - 1; i++){
         totalDiff += sortedHand[i] - sortedHand[i + 1]
       }
