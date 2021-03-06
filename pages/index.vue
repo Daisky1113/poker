@@ -43,8 +43,8 @@ export default {
         {mark: 'H', val: '2',},
         {mark: 'D', val: '3'}, 
         {mark: 'S', val: '5'}, 
-        // {mark: 'S', val: '4'}, 
-        {mark: 'Joker', val: 'Joker'}
+        {mark: 'S', val: '4'}, 
+        // {mark: 'Joker', val: 'Joker'}
       ])
     this.checkJoker()
     this.setRole(this.getRole(this.hands))
@@ -55,6 +55,11 @@ export default {
     hasJoker: false,
     role: '',
   }),
+  computed: {
+    sorteadHand(){
+      this.hands.sort((a, b) => a.val < b.val ? -1 : 1)
+    }
+  },
   filters: {
     replace1toA(num){
       return num === 1 ? 'A' : num
