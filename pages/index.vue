@@ -5,7 +5,7 @@
         <v-card-text>
           <p>カード</p>
           <div>
-            <p class="d-flex align-center" v-for="(card, i) in hands" :key="i">
+            <p class="d-flex align-center" v-for="(card, i) in sorteadHand" :key="i">
               <span class="mr-3"><v-img max-height="20" max-width="20" :src="`/img/${card.mark}.png`" alt=""></v-img></span>
               <span class="subtitle-2">{{ card.val |  replace1toA}}</span>
             </p>
@@ -39,12 +39,12 @@ export default {
     // debug
     //---------------------------------
     this.hands.push(...[
-        {mark: 'S', val: '1'},
-        {mark: 'H', val: '2',},
-        {mark: 'D', val: '3'}, 
-        {mark: 'S', val: '5'}, 
-        // {mark: 'S', val: '4'}, 
-        {mark: 'Joker', val: 'Joker'}
+        {mark: 'S', val: 7},
+        {mark: 'H', val: 8},
+        {mark: 'D', val: 9}, 
+        {mark: 'S', val: 11}, 
+        {mark: 'S', val: 11}, 
+        // {mark: 'Joker', val: 'Joker'}
       ])
     this.checkJoker()
     this.setRole(this.getRole(this.hands))
@@ -60,21 +60,30 @@ export default {
       return num === 1 ? 'A' : num
     }
   },
+  computed:{
+    sorteadHand(){
+      return this.hands.sort((a, b) => a.val < b.val ? -1 : 1)
+    }
+  },
   methods: {
     getCards(n){
       this.clearRole()
       this.clearHands();
       this.clearJokerState();
+      this.getRandomCard(n)
+      this.checkJoker()
+      this.setRole(this.getRole(this.hands))
+    },
+
+    getRandomCard(n){
       const hand = [];
       for(let i = 0; i < n; i++){
-        const l = this.deck.length;
-        if(l === 0) this.addDeck();
+        if(this.deck.length == 0) this.addDeck()
+        const l = this.deck.length
         const index = Math.floor(Math.random() * l);
         hand.push(this.deck.splice(index, 1)[0])
       }
       this.hands.push(...hand);
-      this.checkJoker()
-      this.setRole(this.getRole(this.hands))
     },
 
     addDeck(){
@@ -175,7 +184,7 @@ export default {
     // ジョーカーありの場合も隣合うカードの差の合計が４ならストレートが成立する
     isStraight(sortedHand){
       let totalDiff = 0
-      for(let i = 0; i < sortedHand.length - 1; i++){
+      for(let i = 0; i < sortedHand.length; i++){
         totalDiff += sortedHand[i] - sortedHand[i + 1]
       }
       return totalDiff == 4 ? true : false
