@@ -39,12 +39,12 @@ export default {
     // debug
     //---------------------------------
     this.hands.push(...[
-        {mark: 'S', val: '1'},
-        {mark: 'H', val: '2',},
-        {mark: 'D', val: '3'}, 
-        {mark: 'S', val: '5'}, 
-        {mark: 'S', val: '4'}, 
-        // {mark: 'Joker', val: 'Joker'}
+        {mark: 'S', val: 4},
+        {mark: 'H', val: 5,},
+        {mark: 'D', val: 7}, 
+        {mark: 'S', val: 8}, 
+        // {mark: 'S', val: '4'}, 
+        {mark: 'Joker', val: 'Joker'}
       ])
     this.checkJoker()
     this.setRole(this.getRole(this.hands))
@@ -146,16 +146,16 @@ export default {
      const s = new Set(sorteadHand)
 
      switch(s.size){
-       case 1:
+      case 1:
          return 'FiveCard'
       case 2:
-        return  this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
+        return this.isFourCard(sorteadHand, s) ? 'FourCard' : 'FullHouse'
       case 3:
         return this.isThreeCard(sorteadHand, s, this.hasJoker) ? 'ThreeCard' : 'TwoPaier'
       case 4:
       case 5:
         const flash = this.isFlash(hand)
-        const straight = this.isStraight(sorteadHand)
+        const straight = this.isStraight(sorteadHand, this.hasJoker)
         if(flash && straight) return 'StraighFlash'
         if(straight) return 'Straight'
         if(flash) return  this.isRoyalStraightFlash(sorteadHand) ? 'RoyalStraightFlash' : 'Flash'
@@ -187,14 +187,18 @@ export default {
     // ストレートは渡ってきたハンドをソートして隣り合う要素の差がすべて１の時
     // つまり隣合うカードの差の合計が4の時
     // ジョーカーありの場合も隣合うカードの差の合計が４ならストレートが成立する
-    isStraight(sortedHand){
+    isStraight(sortedHand, hasJoker){
       let totalDiff = 0
-      for(let i = 0; i < sortedHand.length; i++){
+      for(let i = 0; i < sortedHand.length - 1; i++){
         totalDiff += sortedHand[i] - sortedHand[i + 1]
       }
+
+      if(hasJoker && totalDiff == 3){
+        return true
+      }
+
       return totalDiff == 4 ? true : false
     },
-
     // フラッシュはハンドのマークだけのセットを作ってサイズが1の時
     isFlash(hand){
       return new Set(hand.map(el => el.mark)).size == 1 ? true : false
